@@ -1,7 +1,7 @@
 {
   "name": "@node-cron/nestjs",
   "version": "0.1.0",
-  "description": "Drop-in replacement for @nestjs/schedule backed by node-cron: same decorators, plus distributed scheduling, background tasks and per-fire coordination.",
+  "description": "NestJS integration for node-cron: a drop-in replacement for @nestjs/schedule with the same decorators, plus background tasks and distributed-ready scheduling.",
   "author": "Lucas Merencia",
   "license": "ISC",
   "homepage": "https://github.com/node-cron/nestjs#readme",
