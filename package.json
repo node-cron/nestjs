@@ -50,10 +50,6 @@
   "bugs": {
     "url": "https://github.com/node-cron/nestjs/issues"
   },
-  "overrides": {
-    "undici": "^6.27.0",
-    "uuid": "^11.1.1"
-  },
   "peerDependencies": {
     "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
     "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",
@@ -67,7 +63,6 @@
     "@nestjs/testing": "^11.0.0",
     "@node-cron/redis-coordinator": "^0.1.0",
     "@rollup/plugin-commonjs": "^29.0.3",
-    "@testcontainers/redis": "^10.13.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/node": "^22.15.3",
@@ -80,7 +75,6 @@
     "rollup": "^4.62.0",
     "rollup-plugin-dts": "^6.4.1",
     "rxjs": "^7.8.1",
-    "testcontainers": "^10.13.0",
     "tslib": "^2.8.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0",

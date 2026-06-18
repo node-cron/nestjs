@@ -113,13 +113,28 @@ export class SchedulerOrchestrator
       if (metadata.initialDelay && metadata.initialDelay > 0) {
         this.cronJobs[key].initialDelayRef = setTimeout(() => {
           if (this.schedulerRegistry.doesExist("cron", key)) {
-            void task.start();
+            this.startTask(key, task);
           }
         }, metadata.initialDelay);
       } else {
-        void task.start();
+        this.startTask(key, task);
       }
     });
+  }
+
+  // Inline tasks start synchronously, but a background task forks and its
+  // start() returns a promise that rejects when the task file can't be loaded
+  // (bad path, unsupported syntax, ...). Route that to the logger instead of
+  // leaving it as an unhandled rejection.
+  private startTask(key: string, task: ScheduledTask) {
+    const started = task.start() as void | Promise<void>;
+    if (started && typeof started.catch === "function") {
+      started.catch((error: any) =>
+        this.logger.error(
+          `Failed to start scheduled task "${key}": ${error?.message ?? error}`,
+        ),
+      );
+    }
   }
 
   clearTimeouts() {

@@ -157,6 +157,31 @@ describe("SchedulerOrchestrator cron", () => {
     expect(registry.doesExist("cron", "bg-off")).toBe(true);
   });
 
+  it("routes a failed start() to the logger instead of rejecting", async () => {
+    const error = vi
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation(() => {});
+    const { orchestrator } = build();
+    const task = {
+      start: vi.fn().mockRejectedValue(new Error("cannot load task file")),
+      destroy: vi.fn(),
+    };
+    vi.mocked(createTask).mockReturnValue(task as any);
+
+    orchestrator.addBackgroundCron("/missing.task.js", {
+      cronTime: "* * * * *",
+      name: "bg",
+    });
+    // Must not throw synchronously nor leave an unhandled rejection.
+    orchestrator.onApplicationBootstrap();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to start scheduled task "bg"'),
+    );
+  });
+
   it("throws when a distributed background cron has no name", () => {
     const { orchestrator } = build();
     expect(() =>

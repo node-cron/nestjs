@@ -24,6 +24,18 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +43,4 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      # ubuntu-latest ships a running Docker daemon, so testcontainers can spin
-      # up Redis for the distributed integration tests.
       - run: npm run test:integration

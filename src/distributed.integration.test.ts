@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { RedisLockCoordinator } from "@node-cron/redis-coordinator";
-import { RedisContainer, StartedRedisContainer } from "@testcontainers/redis";
 import Redis from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Cron } from "./decorators/cron.decorator";
@@ -9,6 +8,30 @@ import { CronExpression } from "./enums/cron-expression.enum";
 import { ScheduleModule } from "./schedule.module";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Run against a real Redis pointed at by REDIS_URL (defaults to localhost). CI
+// provides one as a service container; locally, point it at any Redis. If none
+// is reachable, the suite skips rather than failing.
+const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
+
+async function reachable(url: string): Promise<boolean> {
+  const probe = new Redis(url, {
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+    retryStrategy: () => null,
+  });
+  try {
+    await probe.connect();
+    await probe.ping();
+    return true;
+  } catch {
+    return false;
+  } finally {
+    probe.disconnect();
+  }
+}
+
+const available = await reachable(REDIS_URL);
 
 // Build a self-contained "instance": a distributed @Cron with its own Redis
 // coordinator. A per-job `runCoordinator` is used (it overrides the global one)
@@ -39,21 +62,18 @@ function buildInstance(coordinator: RedisLockCoordinator) {
   };
 }
 
-describe("distributed coordination over real Redis", () => {
-  let container: StartedRedisContainer;
+describe.skipIf(!available)("distributed coordination over real Redis", () => {
   let clientA: Redis;
   let clientB: Redis;
 
-  beforeAll(async () => {
-    container = await new RedisContainer("redis:7-alpine").start();
-    clientA = new Redis(container.getConnectionUrl());
-    clientB = new Redis(container.getConnectionUrl());
+  beforeAll(() => {
+    clientA = new Redis(REDIS_URL);
+    clientB = new Redis(REDIS_URL);
   });
 
-  afterAll(async () => {
+  afterAll(() => {
     clientA?.disconnect();
     clientB?.disconnect();
-    await container?.stop();
   });
 
   it("runs a distributed job once per fire across two instances", async () => {
@@ -69,9 +89,7 @@ describe("distributed coordination over real Redis", () => {
 
     await wait(3500);
 
-    const runsA = appA.get(a.Worker).runs;
-    const runsB = appB.get(b.Worker).runs;
-    const total = runsA + runsB;
+    const total = appA.get(a.Worker).runs + appB.get(b.Worker).runs;
 
     await appA.close();
     await appB.close();
