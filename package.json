@@ -1,0 +1,89 @@
+{
+  "name": "@node-cron/nestjs",
+  "version": "0.1.0",
+  "description": "Drop-in replacement for @nestjs/schedule backed by node-cron: same decorators, plus distributed scheduling, background tasks and per-fire coordination.",
+  "author": "Lucas Merencia",
+  "license": "ISC",
+  "homepage": "https://github.com/node-cron/nestjs#readme",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "lint": "eslint ./src",
+    "check": "npm run lint && npm test",
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/node-cron/nestjs.git"
+  },
+  "keywords": [
+    "nestjs",
+    "nest",
+    "cron",
+    "scheduler",
+    "schedule",
+    "task",
+    "node-cron",
+    "distributed",
+    "background-task"
+  ],
+  "bugs": {
+    "url": "https://github.com/node-cron/nestjs/issues"
+  },
+  "overrides": {
+    "undici": "^6.27.0",
+    "uuid": "^11.1.1"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "node-cron": ">=4.4.1",
+    "reflect-metadata": "^0.1.12 || ^0.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@node-cron/redis-coordinator": "^0.1.0",
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@testcontainers/redis": "^10.13.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^22.15.3",
+    "@vitest/coverage-v8": "^4.1.9",
+    "eslint": "^10.5.0",
+    "globals": "^16.1.0",
+    "ioredis": "^5.4.1",
+    "node-cron": "^4.4.1",
+    "reflect-metadata": "^0.2.2",
+    "rollup": "^4.62.0",
+    "rollup-plugin-dts": "^6.4.1",
+    "rxjs": "^7.8.1",
+    "testcontainers": "^10.13.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^4.1.9"
+  }
+}
