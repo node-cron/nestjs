@@ -46,35 +46,6 @@ npm install @node-cron/nestjs node-cron
 
 `node-cron` is a peer dependency, so install it alongside this package.
 
-### Testing a local (unpublished) build
-
-Installing the package from a local folder with `npm install ../path` creates a
-**symlink**. A symlinked package resolves its peer `@nestjs/core` through its
-own `node_modules` (via the symlink's realpath), which gives you a *second* copy
-of `@nestjs/core`. Nest then fails with:
-
-```
-Nest can't resolve dependencies of the SchedulerMetadataAccessor (?).
-Please make sure that the argument Reflector at index [0] is available...
-```
-
-This never happens with a normal registry install (peers resolve once, from
-your app). To test a local build, avoid the symlink. Either install a packed
-tarball (closest to a real publish):
-
-```bash
-# in this package
-npm run build && npm pack          # -> node-cron-nestjs-x.y.z.tgz
-# in your app
-npm install /path/to/node-cron-nestjs-x.y.z.tgz node-cron
-```
-
-or use `--install-links`, which copies the local package instead of linking it:
-
-```bash
-npm install ../node-cron-nestjs ../node-cron --install-links
-```
-
 ## Usage
 
 Identical to `@nestjs/schedule`.
