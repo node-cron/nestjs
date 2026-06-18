@@ -108,6 +108,21 @@ describe("SchedulerOrchestrator cron", () => {
     vi.useRealTimers();
   });
 
+  it("throws on a duplicate cron name instead of silently overwriting", () => {
+    const { orchestrator } = build();
+    orchestrator.addCron(() => {}, { cronTime: "* * * * *", name: "dup" });
+    // Same name across inline and background must fail loudly, not drop a job.
+    expect(() =>
+      orchestrator.addBackgroundCron("/x.js", {
+        cronTime: "0 * * * *",
+        name: "dup",
+      }),
+    ).toThrow(/already exists/);
+    expect(() =>
+      orchestrator.addCron(() => {}, { cronTime: "0 0 * * *", name: "dup" }),
+    ).toThrow(/already exists/);
+  });
+
   it("throws when distributed is set without a name", () => {
     const { orchestrator } = build();
     expect(() =>

@@ -17,7 +17,10 @@ import { CronMetadata } from "./decorators/cron.decorator";
 import { ScheduleModuleOptions } from "./interfaces/schedule-module-options.interface";
 import { createNestNodeCronLogger } from "./nest-logger";
 import { SCHEDULE_MODULE_OPTIONS } from "./schedule.constants";
-import { DISTRIBUTED_REQUIRES_NAME } from "./schedule.messages";
+import {
+  DISTRIBUTED_REQUIRES_NAME,
+  DUPLICATE_SCHEDULER,
+} from "./schedule.messages";
 import { SchedulerRegistry } from "./scheduler.registry";
 
 type TargetHost = { target: () => void };
@@ -169,11 +172,7 @@ export class SchedulerOrchestrator
   }
 
   addCron(methodRef: () => unknown, metadata: CronMetadata) {
-    if (metadata.distributed && !metadata.name) {
-      throw new Error(DISTRIBUTED_REQUIRES_NAME(metadata.name ?? "<unnamed>"));
-    }
-    const name = metadata.name || randomUUID();
-    this.cronJobs[name] = { target: methodRef, metadata };
+    this.registerCronJob(methodRef, metadata);
   }
 
   /**
@@ -182,11 +181,25 @@ export class SchedulerOrchestrator
    * the target is a string path rather than a function.
    */
   addBackgroundCron(taskPath: string, metadata: CronMetadata) {
+    this.registerCronJob(taskPath, metadata);
+  }
+
+  // Inline and background crons share one keyed map, so a name collision
+  // between any two of them must fail loudly here rather than silently
+  // overwrite (which would drop a job and bypass the registry's duplicate
+  // check, since only the survivor ever reaches it).
+  private registerCronJob(
+    target: (() => unknown) | string,
+    metadata: CronMetadata,
+  ) {
     if (metadata.distributed && !metadata.name) {
       throw new Error(DISTRIBUTED_REQUIRES_NAME(metadata.name ?? "<unnamed>"));
     }
     const name = metadata.name || randomUUID();
-    this.cronJobs[name] = { target: taskPath, metadata };
+    if (this.cronJobs[name]) {
+      throw new Error(DUPLICATE_SCHEDULER("Cron Job", name));
+    }
+    this.cronJobs[name] = { target, metadata };
   }
 
   private toNodeCronOptions(name: string, metadata: CronMetadata): TaskOptions {

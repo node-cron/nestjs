@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import type { ScheduledTask } from "node-cron";
 import { DUPLICATE_SCHEDULER, NO_SCHEDULER_FOUND } from "./schedule.messages";
 
@@ -15,6 +15,8 @@ import { DUPLICATE_SCHEDULER, NO_SCHEDULER_FOUND } from "./schedule.messages";
  */
 @Injectable()
 export class SchedulerRegistry {
+  private readonly logger = new Logger(SchedulerRegistry.name);
+
   private readonly cronJobs = new Map<string, ScheduledTask>();
   private readonly intervals = new Map<string, any>();
   private readonly timeouts = new Map<string, any>();
@@ -53,7 +55,16 @@ export class SchedulerRegistry {
 
   deleteCronJob(name: string): void {
     const task = this.getCronJob(name);
-    void task.destroy();
+    // A background task's destroy() kills a child process and may reject;
+    // route that to the logger instead of leaving an unhandled rejection.
+    const destroyed = task.destroy() as void | Promise<void>;
+    if (destroyed && typeof destroyed.catch === "function") {
+      destroyed.catch((error: any) =>
+        this.logger.error(
+          `Failed to destroy cron job "${name}": ${error?.message ?? error}`,
+        ),
+      );
+    }
     this.cronJobs.delete(name);
   }
 

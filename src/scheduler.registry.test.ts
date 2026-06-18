@@ -1,6 +1,9 @@
+import { Logger } from "@nestjs/common";
 import type { ScheduledTask } from "node-cron";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SchedulerRegistry } from "./scheduler.registry";
+
+afterEach(() => vi.restoreAllMocks());
 
 const fakeTask = (id: string): ScheduledTask =>
   ({ id, destroy: vi.fn() }) as unknown as ScheduledTask;
@@ -35,6 +38,28 @@ describe("SchedulerRegistry", () => {
       registry.deleteCronJob("a");
 
       expect(task.destroy).toHaveBeenCalledOnce();
+      expect(registry.doesExist("cron", "a")).toBe(false);
+    });
+
+    it("routes a rejecting destroy() to the logger and still forgets it", async () => {
+      const error = vi
+        .spyOn(Logger.prototype, "error")
+        .mockImplementation(() => {});
+      const registry = new SchedulerRegistry();
+      const task = {
+        id: "a",
+        destroy: vi.fn().mockRejectedValue(new Error("kill failed")),
+      } as unknown as ScheduledTask;
+      registry.addCronJob("a", task);
+
+      // Must not throw nor leave an unhandled rejection.
+      registry.deleteCronJob("a");
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to destroy cron job "a"'),
+      );
       expect(registry.doesExist("cron", "a")).toBe(false);
     });
   });
